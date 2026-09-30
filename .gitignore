@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pqvenv/
+
+# Downloaded native binaries (fetch per platform, see phone-setup.md)
+bin/
+
+# Runtime artifacts: user notes + per-run traces
+notes/
+runs/
+
+# Local model weights (downloaded from Hugging Face on first use)
+.pqmodels/
+
+# OS / editor
+.DS_Store
