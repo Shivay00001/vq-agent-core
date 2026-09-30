@@ -1,0 +1,56 @@
+# VQ Agent Core configuration
+
+# DECIDE layer: jev | local | auto
+#   jev   = Jev cloud (TypeSafe System One) -- sharpest, calibrated judgments.
+#   local = best available on-device decider, tried in order:
+#           1. Laya (laya_decider) -- local Jev alternative: purpose-built
+#              System One model, RLCD-calibrated, Apache-2.0, no key,
+#              offline after weights download. Needs `laya` pip
+#              package + torch + weights (PC/VM; NOT Termux-friendly).
+#           2. Prompt-based local LLM (local_decider) -- last resort:
+#              private/offline/free, less sharp, uncalibrated confidence.
+#   auto  = try Jev first, fall back to local when Jev is unreachable/fails.
+decider: auto
+
+# Laya settings (only used when the local decider picks the Laya backend).
+# VQ_LAYA_MODEL: hub id or local dir, e.g. "convaiinnovations/laya"
+#   (English 421M), "convaiinnovations/laya-multilingual" (322M), or a
+#   directory with model.safetensors + encoder/ + tokenizer/.
+# LAYA_DEVICE: cpu | cuda | mps. LAYA_THREADS: cap torch CPU threads.
+laya_model: "convaiinnovations/laya"
+
+router:
+  # auto | ctypes | serve
+  #  - ctypes: in-process Needle via the pip package (Linux/macOS/Windows).
+  #  - serve:  talk to a `needle --serve` HTTP endpoint (Termux/Android path).
+  #  - auto:   try ctypes first, fall back to serve.
+  backend: auto
+  confidence_threshold: 0.7
+  # Path to the `needle` CLI binary (Android/Termux: downloaded from the
+  # Cactus-Compute/needle2 HF repo, android-arm64/needle). Empty = search PATH.
+  needle_bin: ""
+  serve_port: 8080
+  system_prompt: "You are VQ Agent Core's action router. Map the user request to exactly one tool call."
+
+jev:
+  # Hatch VM path (surrogate-credential auth). On other machines leave empty
+  # and set JEV_API_KEY instead — see jev_brain.py and phone-setup.md.
+  cli: ~/workspace/skills/typesafe/bin/jev.py
+  model: jev-latest
+  timeout: 120
+
+local_model:
+  # OpenAI-compatible endpoint. llama-server (see fetch_model.sh) on 11434.
+  # Ollama default is also 11434 -- keep the port consistent.
+  # Point at a LAN PC from a phone, e.g. http://192.168.1.10:11434/v1
+  base_url: http://localhost:11434/v1
+  # Name the server serves. llama-server serves its single loaded model and
+  # accepts any /v1/chat/completions "model" value; this must be truthful.
+  model: qwen2.5-0.5b-instruct
+  timeout: 120
+  # How to serve the model on this VM (free, offline):
+  #   ./fetch_model.sh
+  #   ./bin/llama/llama-b11146/llama-server -m models/qwen2.5-0.5b-instruct-q4_k_m.gguf --port 11434
+
+notes_dir: notes
+runs_dir: runs

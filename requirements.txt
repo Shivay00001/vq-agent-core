@@ -1,0 +1,17 @@
+# VQ Agent Core — pure-Python + cactus-needle only.
+# Both PyYAML and requests ship pure-Python wheels (Termux-safe).
+# cactus-needle is a pure-Python wrapper; its ~14MB native engine is
+# fetched automatically on first use (Linux/macOS/Windows) — see
+# phone-setup.md for the Android/Termux path (uses the needle CLI binary).
+cactus-needle==2.0.15
+PyYAML==6.0.3
+requests==2.34.2
+
+# --- OPTIONAL: Laya local DECIDE backend (PC/VM only, NOT Termux) ---
+# Laya is Shivay's chosen local Jev alternative: a purpose-built System One
+# decision model (Apache-2.0), RLCD-calibrated, no API key. Uncomment to
+# enable `decider: local` -> Laya on a PC/VM. Needs ~1 GB RAM for weights
+# (convaiinnovations/laya, downloaded from Hugging Face on first use).
+# torch has no Termux wheel, so the phone keeps the prompt-based fallback.
+# laya==0.3.20
+# torch>=2.0.0  # CPU-only build recommended: pip install torch --index-url https://download.pytorch.org/whl/cpu
