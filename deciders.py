@@ -3,12 +3,17 @@
 config `decider:` selects the judgment engine:
   jev   -> Jev cloud (TypeSafe System One). Sharpest, calibrated judgments.
   local -> Best available on-device decider, tried in order:
-           1. Laya (laya_decider) -- local Jev alternative: purpose-built
+           1. Strands Decider 2B (strands_decider) -- AWS Strands Labs
+              System One model: Qwen3.5-2B + pointer head + LoRA, Apache-2.0,
+              typed choice/score/noul answers in one forward pass, calibrated.
+              Needs the `strands-decider` package + torch + weights
+              (PC/VM, not Termux).
+           2. Laya (laya_decider) -- local Jev alternative: purpose-built
               System One model, RLCD-calibrated, Apache-2.0.
               Needs the `laya` package + torch + weights (PC/VM, not Termux).
-           2. Prompt-based local LLM (local_decider) -- last resort:
+           3. Prompt-based local LLM (local_decider) -- last resort:
               private / offline / free; less sharp, uncalibrated confidence.
-           If neither is available the error propagates and the agent
+           If none is available the error propagates and the agent
            escalates to a human (safe default).
   auto  -> Try Jev first; fall back to local when Jev is unreachable
            or fails. If both fail, the error propagates and the agent
@@ -31,6 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import jev_brain  # noqa: E402
 import local_decider  # noqa: E402
 import laya_decider  # noqa: E402
+import strands_backend as strands_decider  # noqa: E402
 
 
 class JevDecider:
@@ -50,27 +56,37 @@ class JevDecider:
 
 
 class LocalDecider:
-    """`local`: Laya first, prompt-based local LLM as last resort."""
+    """`local`: Strands first, then Laya, prompt-based local LLM as last resort."""
 
     name = "local"
-    _backends = ("laya", "prompt")
+    _backends = ("strands", "laya", "prompt")
 
     def __init__(self, backend=None):
-        # backend: "laya" | "prompt" | None (None = try in order)
+        # backend: "strands" | "laya" | "prompt" | None (None = try in order)
         if backend and backend not in self._backends:
             raise ValueError(f"unknown local backend: {backend!r}")
         self.backend = backend
         self.last_backend = None
 
+    _MODULES = {
+        "strands": strands_decider,
+        "laya": laya_decider,
+        "prompt": local_decider,
+    }
+    _ERRORS = (
+        strands_decider.StrandsDeciderUnavailable,
+        laya_decider.LayaDeciderUnavailable,
+        local_decider.LocalDeciderUnavailable,
+    )
+
     def _run(self, method, *args, **kwargs):
         order = [self.backend] if self.backend else list(self._backends)
         errors = []
         for name in order:
-            mod = laya_decider if name == "laya" else local_decider
+            mod = self._MODULES[name]
             try:
                 res = getattr(mod, method)(*args, **kwargs)
-            except (laya_decider.LayaDeciderUnavailable,
-                    local_decider.LocalDeciderUnavailable) as exc:
+            except self._ERRORS as exc:
                 errors.append(f"{name}: {exc}")
                 continue
             self.last_backend = name
