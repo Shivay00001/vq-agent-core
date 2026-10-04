@@ -7,6 +7,19 @@ cactus-needle==2.0.15
 PyYAML==6.0.3
 requests==2.34.2
 
+# --- OPTIONAL: Strands Decider 2B local DECIDE backend (PC/VM only, NOT Termux) ---
+# Strands Decider 2B is the first `local` backend: AWS Strands Labs System One
+# decision model (Qwen3.5-2B + pointer head + LoRA, Apache-2.0), typed
+# choice/score/noul answers in one forward pass, calibrated, no API key.
+# Needs ~4.5 GB RAM for weights (./models/strands-decider-2b + ./models/Qwen3.5-2B-Base).
+# A ready venv lives at ./.venv-strands (torch + strands-decider 0.1.0).
+# torch has no Termux wheel, so the phone keeps the prompt-based fallback.
+# strands-decider==0.1.0
+# torch>=2.7  # CPU-only build recommended: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# peft>=0.21
+# huggingface_hub>=1.5
+# pydantic>=2.7
+
 # --- OPTIONAL: Laya local DECIDE backend (PC/VM only, NOT Termux) ---
 # Laya is Shivay's chosen local Jev alternative: a purpose-built System One
 # decision model (Apache-2.0), RLCD-calibrated, no API key. Uncomment to
