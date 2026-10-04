@@ -3,14 +3,27 @@
 # DECIDE layer: jev | local | auto
 #   jev   = Jev cloud (TypeSafe System One) -- sharpest, calibrated judgments.
 #   local = best available on-device decider, tried in order:
-#           1. Laya (laya_decider) -- local Jev alternative: purpose-built
+#           1. Strands Decider 2B (strands_backend) -- AWS Strands Labs
+#              System One model (Qwen3.5-2B + pointer head + LoRA,
+#              Apache-2.0), typed answers in one forward pass, calibrated,
+#              no key, offline after weights download. Needs the
+#              `strands-decider` pip package + torch + ~4.5 GB weights
+#              (PC/VM; NOT Termux-friendly). Run the agent with
+#              .venv-strands/bin/python to use this backend.
+#           2. Laya (laya_decider) -- local Jev alternative: purpose-built
 #              System One model, RLCD-calibrated, Apache-2.0, no key,
 #              offline after weights download. Needs `laya` pip
 #              package + torch + weights (PC/VM; NOT Termux-friendly).
-#           2. Prompt-based local LLM (local_decider) -- last resort:
+#           3. Prompt-based local LLM (local_decider) -- last resort:
 #              private/offline/free, less sharp, uncalibrated confidence.
 #   auto  = try Jev first, fall back to local when Jev is unreachable/fails.
 decider: auto
+
+# Strands Decider 2B settings (only used when the local decider picks it).
+# VQ_STRANDS_MODEL: adapter checkpoint dir (default ./models/strands-decider-2b).
+# VQ_STRANDS_TORSO: base model dir (default ./models/Qwen3.5-2B-Base).
+# STRANDS_DEVICE: cpu | cuda. STRANDS_THREADS: cap torch CPU threads.
+# STRANDS_CPU_UPCAST=1: fp32-on-CPU (faster, needs ~8 GB RAM).
 
 # Laya settings (only used when the local decider picks the Laya backend).
 # VQ_LAYA_MODEL: hub id or local dir, e.g. "convaiinnovations/laya"
