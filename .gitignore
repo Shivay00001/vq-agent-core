@@ -13,6 +13,12 @@ runs/
 
 # Local model weights (downloaded from Hugging Face on first use)
 .pqmodels/
+models/
+*.gguf
+*.safetensors
+
+# ML venv for the Strands/Laya local deciders (rebuilt per machine)
+.venv-strands/
 
 # OS / editor
 .DS_Store
