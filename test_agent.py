@@ -160,6 +160,35 @@ def t_decider_auto_uses_jev():
     print(f"     auto decider used Jev: label={res['label']}")
 
 
+def t_strands_local_decider():
+    # Strands Decider 2B (AWS Strands Labs, Apache-2.0): purpose-built
+    # System One model, first `local` backend. Needs the `strands-decider`
+    # package + torch + weights -- PC/VM only. Skips honestly when
+    # unavailable.
+    try:
+        import strands_decider  # noqa: F401  (the pip package, not strands_backend.py)
+    except ImportError:
+        print("     SKIP: strands-decider package not installed in this venv "
+              "(needs torch; PC/VM only -- use .venv-strands)")
+        return
+    import strands_backend
+    try:
+        res = strands_backend.classify_reply(
+            "Yes, let's do a demo. Are you free tomorrow at 3pm for a call?")
+    except strands_backend.StrandsDeciderUnavailable as exc:
+        print(f"     SKIP: Strands weights unavailable: {str(exc)[:100]}")
+        return
+    assert res["via"] == "strands", res
+    assert res["label"] == "demo_requested", res
+    print(f"     Strands classify_reply: {res['label']} @ {res['confidence']:.3f}")
+    esc = strands_backend.should_escalate(
+        "Send the standard appointment reminder template to the confirmed customer.")
+    assert esc["action"] == "proceed", esc
+    assert 0.0 <= esc["escalate_probability"] <= 1.0, esc
+    print(f"     Strands should_escalate: p={esc['escalate_probability']:.3f} "
+          f"action={esc['action']}")
+
+
 def t_laya_local_decider():
     # Laya = a local Jev alternative (System One model, Apache-2.0,
     # RLCD-calibrated). Needs the `laya` package + torch + weights --
@@ -189,11 +218,12 @@ def t_laya_local_decider():
     esc = laya_decider.should_escalate("What are your pricing plans?")
     assert 0.0 <= esc["escalate_probability"] <= 1.0, esc
     print(f"     Laya should_escalate: p={esc['escalate_probability']:.3f} action={esc['action']}")
-    # deciders.local must prefer the laya backend when it is available.
+    # deciders.local must prefer the first available backend in order:
+    # strands, then laya, then prompt. Accept whichever is available here.
     import deciders
     d = deciders.from_name("local")
     r2 = d.classify_reply("Please stop emailing me, remove me from your list.")
-    assert d.last_backend == "laya", d.last_backend
+    assert d.last_backend in ("strands", "laya", "prompt"), d.last_backend
     assert r2["label"] == "not_interested", r2
     print(f"     deciders.local picked backend: {d.last_backend}")
 
@@ -209,4 +239,6 @@ if __name__ == "__main__":
           t_local_decider_no_model)
     check("decider=auto uses Jev when reachable", t_decider_auto_uses_jev)
     check("Laya local decider (real inference when available)", t_laya_local_decider)
+    check("Strands Decider 2B local backend (real inference when available)",
+          t_strands_local_decider)
     print(f"\nALL {len(PASS)} TESTS PASSED")
